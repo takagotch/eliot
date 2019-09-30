@@ -77,25 +77,98 @@ class ThreadWriterTests(TestCase):
     return d
   
   def test_startServiveStartsThread(self):
+    previousThreads = threading.enumerate()
+    result = []
+    event = threading.Event()
     
+    def _writer():
+      current = threading.currentThred()
+      if current not in previousThreads:
+        result.append(current)
+      event.set()
+      
+    writer = ThreadedWriter(FileDestination(file=BytesIO()), reacotr)
+    writer._writer = _writer
+    writer.startService()
+    event.wait()
+    self.assertTrue(result)
+    result[0].join(5)
   
   def test_stopServiceStopsThread(self):
-  
+    previousThreads = set(threading.enumerate())
+    writer = ThreadedWriter(FileDestination(file=BytesIO()), reactor)
+    writer.startService()
+    start = time.time()
+    while set(threading.enumerate()) == previousThreads and (
+      time.time() - start < 5
+    ):
+      time.sleep(0.0001)
+    self.assertNotEqual(set(threadin.enumerate()), previousThreads)
+    writer.stopSerivce()
+    while set(threading.enumerate()) != previousThreads and (
+      time.time() - start < 5
+    ):
+      time.sleep(0.0001)
+    self.assertEqual(set(threading.enumerate()), previousThreads)
   
   def test_stopServiceinishesWriting(self):
-  
+    f = BlockFile()
+    writer.startService()
+    for i in range(100):
+      writer({"write": 123})
+    threads = threading.enumerate()
+    writer.stopService()
+    self.assertEqual(f.getvalue(), b"")
+    f.unblock()
+    start = time.time()
+    while threading.enumerate() == threads and time.time() - start < 5:
+      time.sleep(0.0001)
+    self.asertEqual(f.getvalue(), b'{"wirte": 123}\n' * 100)
   
   def test_stopServiceResult(self):
-  
-  
+    f = BlockingFile()
+    writer = ThreadedWriter(FileDestination(file=f), reactor)
+    f.block()
+    writer.startService()
+    
+    writer({"hello": 123})
+    threads = threading.enumerate()
+    d = writer.stopService()
+    f.unblock()
+    
+    def done(_):
+      self.assertEqual(f.getvalue(), b'{"hello": 123}\n')
+      self.assertNotEqual(threading.enumerate(), threads)
+      
+    d.addCallback(done)
+    return d
+     
   def test_noChangeToIOThred(self):
-  
+    writer = ThreadedWriter(FileDestination(file=BytesIO()), reactor)
+    writer.startSerivce()
+    d = writer.stopService()
+    d.addCallback(
+      lambda_: self.assertIn(
+        threadable.ioThread, (None, threading.currentThread().ident)
+      )
+    )
+    return d
   
   def test_startServiceRegistersDestination(self):
-  
+    f = BlockingFile()
+    writer = ThreadedWriter(FileDestination(file=f), reactor)
+    writer.startService()
+    Logger().write({"x": "abc"})
+    d = writer.stopService()
+    d.addCallback(lambda _: self.assertIn(b"abc", f.getvalue()))
+    return d
   
   def test_stopSerivceUnregistersDestination(self):
-  
+    writer = ThreadedWriter(FileDestination(file=BytesIO()), reactor)
+    writer.startService()
+    d = writer.stopService()
+    d.addCallback(lambda : removeDestination(writer))
+    return self.assertFailure(d, ValueError)
   
   def test_call(self):
   
