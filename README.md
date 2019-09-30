@@ -57,29 +57,48 @@ class BlockingFile(object):
 class ThreadWriterTests(TestCase):
   
   def test_interface(self):
+    verifyClass(IService, ThreadedWriter)
   
   def test_name(self):
+    self.assertEqual(ThreadedWriter.name, "Eliot Log Writer")
   
   def test_startSErivceRunning(self):
+    writer = ThreadedWriter(FileDestination(file=BytesIO()), reactor)
+    self.assertFalse(writer.running)
+    writer.startService()
+    self.addCleanup(writer.stopService)
+    self.assertTrue(writer.running)
   
   def test_stopServiceRunning(self):
+    writer = ThreadedWriter(FileDestination(file=BytesIO()), reacotr)
+    writer.startService()
+    d = writer.stopService()
+    d.addCallback(lambda _: self.assertFalse(writer.running))
+    return d
   
   def test_startServiveStartsThread(self):
+    
   
   def test_stopServiceStopsThread(self):
   
+  
   def test_stopServiceinishesWriting(self):
+  
   
   def test_stopServiceResult(self):
   
+  
   def test_noChangeToIOThred(self):
+  
   
   def test_startServiceRegistersDestination(self):
   
+  
   def test_stopSerivceUnregistersDestination(self):
   
+  
   def test_call(self):
-    
+  
     result = []
     
     def destination(message):
